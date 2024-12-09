@@ -1,65 +1,38 @@
 #include <SoftwareSerial.h> 
 
 SoftwareSerial XBee(0,1);
+const int input = 0;
+const int output = 1;
+const int pps = 7;
+const long interval = 1000;
+const long interval1 = 2000;
+unsigned long previousMillis = 0;
 
-const byte numChars = 14;
-char receivedChars[numChars];   // an array to store the received data
-boolean newData = false;
-
-void setup() {
+void setup() { 
   Serial.begin(9600);
-  pinMode(0, INPUT);
-  pinMode(1, OUTPUT);
-  pinMode(7, OUTPUT); 
+  pinMode(input, INPUT);
+  pinMode(output, OUTPUT);
+  pinMode(pps, OUTPUT); 
+  digitalWrite (pps, LOW);
 }
 
-void loop() {
-  digitalWrite(7,LOW);
-  recvWithStartEndMarkers();
-  showNewData();
-  delay (1000);
-  digitalWrite(7,HIGH);
-  recvWithStartEndMarkers();
-  showNewData();
-  delay (1000);
-}
-
-void recvWithStartEndMarkers() {
-    static boolean recvInProgress = false;
-    static byte ndx = 0;
-    char startMarker = '$';
-    char endMarker = '*';
-    char rc;
- 
-    while (Serial.available() > 0 && newData == false) {
-        rc = Serial.read();
-
-        if (recvInProgress == true) {
-            if (rc != endMarker) {
-                receivedChars[ndx] = rc;
-                ndx++;
-                if (ndx >= numChars) {
-                    ndx = numChars - 1;
-                }
-            }
-            else {
-                receivedChars[ndx] = '\0'; // terminate the string
-                recvInProgress = false;
-                ndx = 0;
-                newData = true;
-            }
-        }
-
-        else if (rc == startMarker) {
-            recvInProgress = true;
-        }
+void loop() { 
+  unsigned long currentMillis = millis(); 
+    if(Serial.available() > 13){
+      for (int i = 0; i < 14; i++){
+        Serial.print(Serial.read(), HEX);
+        Serial.print(", ");
+      }
+      Serial.println();
     }
-}
-
-void showNewData() {
-    if (newData == true) {
-        Serial.print("This just in ... ");
-        Serial.println(receivedChars);
-        newData = false;
+    if (currentMillis - previousMillis == interval) {
+      digitalWrite(pps, HIGH);
+    }
+    if (currentMillis - previousMillis == interval1){
+      previousMillis = currentMillis;
+      digitalWrite(pps, LOW);
+    }
+    if (currentMillis == 10000){
+      currentMillis == 0;
     }
 }
